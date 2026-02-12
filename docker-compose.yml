@@ -1,0 +1,60 @@
+services:
+  db:
+    image: registry.cn-hangzhou.aliyuncs.com/library/postgres:15-alpine
+    container_name: faraday-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PGSQL_DBNAME:-faraday}
+      POSTGRES_USER: ${PGSQL_USER:-faraday}
+      POSTGRES_PASSWORD: ${PGSQL_PASSWD:-faraday}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGSQL_USER:-faraday} -d ${PGSQL_DBNAME:-faraday}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: registry.cn-hangzhou.aliyuncs.com/library/redis:7-alpine
+    container_name: faraday-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  faraday:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-registry.cn-hangzhou.aliyuncs.com/library/python:3.11-slim-bookworm}
+        APT_MIRROR: ${APT_MIRROR:-mirrors.tuna.tsinghua.edu.cn}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+        PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-pypi.tuna.tsinghua.edu.cn}
+    image: faraday-local:latest
+    container_name: faraday-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "5985:5985"
+    environment:
+      PGSQL_USER: ${PGSQL_USER:-faraday}
+      PGSQL_PASSWD: ${PGSQL_PASSWD:-faraday}
+      PGSQL_HOST: db
+      PGSQL_DBNAME: ${PGSQL_DBNAME:-faraday}
+      REDIS_SERVER: redis://redis:6379/0
+      FARADAY_PASSWORD: ${FARADAY_PASSWORD:-faraday}
+      FQDN: ${FQDN:-localhost:5985}
+    volumes:
+      - faraday_data:/home/faraday/.faraday
+    entrypoint: ["/entrypoint.sh"]
+
+volumes:
+  postgres_data:
+  redis_data:
+  faraday_data:
