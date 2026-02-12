@@ -26,13 +26,19 @@ To read about the latest features check out the [release notes](https://github.c
 
 ### Docker-compose
 
-The easiest way to get faraday up and running is using our docker-compose
+The easiest way to get faraday up and running is using docker compose:
 
 ```shell
-$ wget https://raw.githubusercontent.com/infobyte/faraday/master/docker-compose.yaml
-$ docker-compose up
+$ docker compose up --build
 ```
-If you want to customize, you can find an example config over here [Link](https://docs.faradaysec.com/Install-guide-Docker/)
+
+By default this repository is configured with mainland China mirrors:
+- Docker images: `registry.cn-hangzhou.aliyuncs.com`
+- APT mirror: `mirrors.tuna.tsinghua.edu.cn`
+- PyPI mirror: `https://pypi.tuna.tsinghua.edu.cn/simple`
+
+You can override these values through environment variables in your shell or `.env`.
+If you want to customize further, you can find an example config over here [Link](https://docs.faradaysec.com/Install-guide-Docker/)
 
 
 ### Docker
